@@ -31,7 +31,6 @@ def parse_formula_robust(formula_str):
     total_composition = {el: 0.0 for el in ALL_ELEMENTS}
     if not isinstance(formula_str, str): return total_composition
 
-    # Normalize: Replace dots acting as separators with hyphens
     clean_str = formula_str.replace(" ", "")
     clean_str = re.sub(r'\.(?=[A-Z]|\()', '-', clean_str)
     
@@ -70,13 +69,10 @@ def train_and_evaluate(csv_path, target_name_key, params=None):
     df = pd.read_csv(csv_path)
 
     # --- SMART COLUMN SEARCH ---
-    # This logic finds the column even if it has different symbols
     target_col = None
 
-    # 1. Try exact match
     if target_name_key in df.columns:
         target_col = target_name_key
-    # 2. Try finding a column that contains the key word (e.g., "d33" or "Tc")
     else:
         key_term = target_name_key.split(" ")[0] # get "d33" or "Tc"
         for c in df.columns:
@@ -99,7 +95,6 @@ def train_and_evaluate(csv_path, target_name_key, params=None):
     else:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Define Models
     models = {
         "XGBoost": xgb.XGBRegressor(n_jobs=-1, random_state=42),
         "LightGBM": lgb.LGBMRegressor(verbose=-1, random_state=42),
@@ -162,8 +157,6 @@ def train_and_evaluate(csv_path, target_name_key, params=None):
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR)
 
-    # Save with cleaned name from main.py logic or keep generic
-    # We use the key passed in (e.g. "Tc (C)") to keep file naming consistent
     safe_name = target_name_key.replace(" ", "_").replace("(", "").replace(")", "").replace("/", "_")
     joblib.dump(best_model, os.path.join(MODEL_DIR, f"candidate_{safe_name}.pkl"))
 

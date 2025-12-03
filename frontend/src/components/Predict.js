@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { getElements, predictMaterial } from '../api';
 
 const Predict = () => {
-  const [mode, setMode] = useState('builder'); // 'builder' or 'manual'
+  const [mode, setMode] = useState('builder');
   const [elements, setElements] = useState([]);
 
-  // Builder State
   const [selectedEl, setSelectedEl] = useState('');
   const [amount, setAmount] = useState('');
   const [formulaParts, setFormulaParts] = useState([]);
 
-  // Manual State
   const [manualFormula, setManualFormula] = useState('');
 
-  // Results
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
@@ -21,23 +18,17 @@ const Predict = () => {
     getElements().then(res => setElements(res.data)).catch(err => console.error("Failed to load elements", err));
   }, []);
 
-  // --- ACTIONS ---
-
   const addToFormula = () => {
     if (selectedEl && amount) {
       setFormulaParts([...formulaParts, { el: selectedEl, amt: amount }]);
-      setAmount(''); // Clear amount input for next entry
-      // Keep selected element or clear it? Let's keep it for faster entry of similar types, or clear:
-      // setSelectedEl('');
+      setAmount('');
     }
   };
 
-  // NEW: Remove a specific item by index
   const removePart = (indexToRemove) => {
     setFormulaParts(formulaParts.filter((_, index) => index !== indexToRemove));
   };
 
-  // NEW: Clear everything
   const handleReset = () => {
     setFormulaParts([]);
     setManualFormula('');

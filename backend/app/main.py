@@ -30,7 +30,7 @@ class PredictionRequest(BaseModel):
 
 @app.post("/predict")
 def predict(req: PredictionRequest):
-    # Load Production Models using safe names
+
     try:
         model_d33 = joblib.load(os.path.join(MODEL_DIR, "production_d33_pC_N.pkl"))
     except: model_d33 = None
@@ -39,19 +39,15 @@ def predict(req: PredictionRequest):
         model_tc = joblib.load(os.path.join(MODEL_DIR, "production_Tc_C.pkl"))
     except: model_tc = None
 
-    # Parse Input
     features = parse_formula_robust(req.formula)
     if sum(features.values()) == 0:
         return {"error": "Invalid Formula"}
 
-    # Prepare DF
     df = pd.DataFrame([features])
-    # Ensure columns match training (ALL_ELEMENTS)
     for col in ALL_ELEMENTS:
         if col not in df.columns: df[col] = 0.0
     df = df[ALL_ELEMENTS]
 
-    # Predict
     d33 = float(model_d33.predict(df)[0]) if model_d33 else None
     tc = float(model_tc.predict(df)[0]) if model_tc else None
 
@@ -69,14 +65,12 @@ async def train_models(
     max_depth: int = 5,
     file: UploadFile = File(...)
 ):
-    # Save uploaded dataset
     os.makedirs("datasets", exist_ok=True)
     with open(DATASET_PATH, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     params = {"n_estimators": n_estimators, "learning_rate": learning_rate, "max_depth": max_depth}
     
-    # Run training logic
     results_d33 = train_and_evaluate(DATASET_PATH, "d33 (pC/N)", params)
     results_tc = train_and_evaluate(DATASET_PATH, "Tc (C)", params)
 
@@ -88,7 +82,6 @@ async def train_models(
 # --- 3. CONFIRM MODEL ---
 @app.post("/confirm-model")
 def confirm_model():
-    # Update this to match the clean filenames
     for target in ["d33 (pC/N)", "Tc (C)"]:
         safe_target = clean_filename(target)
         cand = os.path.join(MODEL_DIR, f"candidate_{safe_target}.pkl")
@@ -102,7 +95,7 @@ def confirm_model():
 @app.get("/dataset")
 def get_dataset():
     if os.path.exists(DATASET_PATH):
-        df = pd.read_csv(DATASET_PATH).head(50) # Return first 50 rows
+        df = pd.read_csv(DATASET_PATH).head(50)
         return df.to_dict(orient="records")
     return []
 
